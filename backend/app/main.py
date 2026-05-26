@@ -170,52 +170,65 @@ def register(data: dict):
 @app.post("/login")
 def login(data: dict):
 
-    username = data["username"]
-    password = data["password"]
+    try:
 
-    conn = sqlite3.connect(
-        "scans.db",
-        check_same_thread=False
-    )
+        username = data["username"]
+        password = data["password"]
 
-    cursor = conn.cursor()
-
-    cursor.execute(
-        "SELECT * FROM users WHERE username=?",
-        (username,)
-    )
-
-    user = cursor.fetchone()
-
-    conn.close()
-
-    if not user:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid username"
+        conn = sqlite3.connect(
+            "scans.db",
+            check_same_thread=False
         )
 
-    stored_password = user[2]
+        cursor = conn.cursor()
 
-    valid = verify_password(
-        password,
-        stored_password
-    )
-
-    if not valid:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid password"
+        cursor.execute(
+            "SELECT * FROM users WHERE username=?",
+            (username,)
         )
 
-    token = create_access_token(
-        {"sub": username}
-    )
+        user = cursor.fetchone()
 
-    return {
-        "access_token": token,
-        "token_type": "bearer"
-    }
+        conn.close()
+
+        if not user:
+
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid username"
+            )
+
+        stored_password = user[2]
+
+        valid = verify_password(
+            password,
+            stored_password
+        )
+
+        if not valid:
+
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid password"
+            )
+
+        token = create_access_token(
+            {"sub": username}
+        )
+
+        return {
+            "access_token": token,
+            "token_type": "bearer"
+        }
+
+    except Exception as e:
+
+        print("LOGIN ERROR:", str(e))
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
 
 @app.get("/scans")
 def get_scans():
