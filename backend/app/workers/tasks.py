@@ -1,5 +1,4 @@
-from app.database import conn, cursor
-from app.workers.celery_worker import celery
+import sqlite3
 
 from app.scanner.headers import analyze_headers
 from app.scanner.ssl_check import check_ssl
@@ -11,7 +10,6 @@ from app.scanner.port_scan import scan_ports
 from app.utils.validators import validate_target
 
 
-@celery.task
 def run_scan(url):
 
     valid, result_data = validate_target(url)
@@ -55,6 +53,13 @@ def run_scan(url):
 
     grade = calculate_grade(score)
 
+    conn = sqlite3.connect(
+        "scans.db",
+        check_same_thread=False
+    )
+
+    cursor = conn.cursor()
+
     cursor.execute(
         """
         SELECT * FROM scans
@@ -87,6 +92,8 @@ def run_scan(url):
         )
 
     conn.commit()
+
+    conn.close()
 
     summary = f"""
 This website has a security score of {score}

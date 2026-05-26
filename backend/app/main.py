@@ -55,11 +55,21 @@ def home():
 
 @app.post("/scan")
 def scan(data: ScanRequest):
-    task = run_scan.delay(data.url)
-    return {
-        "task_id": task.id,
-        "status": "Processing"
-    }
+
+    try:
+
+        result = run_scan(data.url)
+
+        return result
+
+    except Exception as e:
+
+        print("SCAN ERROR:", str(e))
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
 
 @app.get("/scan/status/{task_id}")
 def get_status(task_id: str):
