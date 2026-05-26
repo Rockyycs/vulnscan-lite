@@ -87,9 +87,13 @@ const startScan = async () => {
       { url }
     )
 
-    const data = response.data.result
+    setResult(response.data);
 
-    setScanResult(data)
+    setProgress(100);
+
+    setScanStage("Threat Intelligence Ready");
+
+    fetchHistory();
 
     setLoading(false)
 
@@ -100,7 +104,7 @@ const startScan = async () => {
     alert("Scan failed")
 
     setLoading(false)
-  }
+  } 
 }
 
   const downloadPDF = async () => {
