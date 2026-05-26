@@ -67,7 +67,7 @@ function Dashboard() {
 
   const fetchHistory = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/history");
+      const response = await fetch("https://vulnscan-lite-rig7.onrender.com/history");
       const data = await response.json();
       setHistory(data);
     } catch (err) {
@@ -78,7 +78,7 @@ function Dashboard() {
   const pollScanStatus = (taskId) => {
     const interval = setInterval(async () => {
       try {
-        const response = await API.get(`http://127.0.0.1:8000/scan/status/${taskId}`);
+        const response = await API.get(`https://vulnscan-lite-rig7.onrender.com/scan/status/${taskId}`);
         const status = response.data.status;
 
         if (status === "PENDING") {
@@ -117,7 +117,7 @@ function Dashboard() {
       setResult(null);
       setProgress(10);
       setScanStage("Initializing Scan Engine...");
-      const response = await API.post("http://127.0.0.1:8000/scan", { url });
+      const response = await API.post("https://vulnscan-lite-rig7.onrender.com/scan", { url });
       const taskId = response.data.task_id;
       pollScanStatus(taskId);
     } catch (err) {
@@ -133,7 +133,7 @@ function Dashboard() {
     }
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://127.0.0.1:8000/download-report", {
+      const response = await fetch("https://vulnscan-lite-rig7.onrender.com/download-report", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
