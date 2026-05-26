@@ -110,29 +110,48 @@ async def download_report(request: Request):
 
 @app.post("/register")
 def register(data: dict):
+
     username = data["username"]
     password = data["password"]
+
+    conn = sqlite3.connect(
+        "scans.db",
+        check_same_thread=False
+    )
+
+    cursor = conn.cursor()
 
     cursor.execute(
         "SELECT * FROM users WHERE username=?",
         (username,)
     )
+
     existing_user = cursor.fetchone()
 
     if existing_user:
+
+        conn.close()
+
         raise HTTPException(
             status_code=400,
             detail="Username already exists"
         )
 
     hashed = hash_password(password)
+
     cursor.execute(
         "INSERT INTO users (username, password) VALUES (?, ?)",
         (username, hashed)
     )
+
     conn.commit()
 
-    token = create_access_token({"sub": username})
+    conn.close()
+
+    token = create_access_token(
+        {"sub": username}
+    )
+
     return {
         "access_token": token,
         "token_type": "bearer"
@@ -140,14 +159,25 @@ def register(data: dict):
 
 @app.post("/login")
 def login(data: dict):
+
     username = data["username"]
     password = data["password"]
+
+    conn = sqlite3.connect(
+        "scans.db",
+        check_same_thread=False
+    )
+
+    cursor = conn.cursor()
 
     cursor.execute(
         "SELECT * FROM users WHERE username=?",
         (username,)
     )
+
     user = cursor.fetchone()
+
+    conn.close()
 
     if not user:
         raise HTTPException(
@@ -156,7 +186,11 @@ def login(data: dict):
         )
 
     stored_password = user[2]
-    valid = verify_password(password, stored_password)
+
+    valid = verify_password(
+        password,
+        stored_password
+    )
 
     if not valid:
         raise HTTPException(
@@ -164,7 +198,10 @@ def login(data: dict):
             detail="Invalid password"
         )
 
-    token = create_access_token({"sub": username})
+    token = create_access_token(
+        {"sub": username}
+    )
+
     return {
         "access_token": token,
         "token_type": "bearer"
@@ -172,53 +209,129 @@ def login(data: dict):
 
 @app.get("/scans")
 def get_scans():
-    cursor.execute("SELECT * FROM scans ORDER BY id DESC")
+
+    conn = sqlite3.connect(
+        "scans.db",
+        check_same_thread=False
+    )
+
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT * FROM scans ORDER BY id DESC"
+    )
+
     rows = cursor.fetchall()
+
+    conn.close()
+
     scans = []
+
     for row in rows:
+
         scans.append({
             "id": row[0],
             "url": row[1],
             "score": row[2],
         })
+
     return scans
+
 
 @app.get("/scan/{scan_id}")
 def get_scan(scan_id: int):
+
+    conn = sqlite3.connect(
+        "scans.db",
+        check_same_thread=False
+    )
+
+    cursor = conn.cursor()
+
     cursor.execute(
         "SELECT * FROM scans WHERE id=?",
         (scan_id,)
     )
+
     scan = cursor.fetchone()
+
+    conn.close()
+
     if not scan:
-        raise HTTPException(status_code=404, detail="Not found")
+
+        raise HTTPException(
+            status_code=404,
+            detail="Not found"
+        )
+
     return {
         "id": scan[0],
         "url": scan[1],
         "score": scan[2]
     }
 
+
 @app.get("/report/{scan_id}")
 def generate_historic_report(scan_id: int):
+
+    conn = sqlite3.connect(
+        "scans.db",
+        check_same_thread=False
+    )
+
+    cursor = conn.cursor()
+
     cursor.execute(
         "SELECT * FROM scans WHERE id=?",
         (scan_id,)
     )
+
     scan = cursor.fetchone()
+
+    conn.close()
+
     if not scan:
-        raise HTTPException(status_code=404, detail="Scan not found")
+
+        raise HTTPException(
+            status_code=404,
+            detail="Scan not found"
+        )
 
     filename = f"report_{scan_id}.pdf"
+
     doc = SimpleDocTemplate(filename)
+
     styles = getSampleStyleSheet()
+
     elements = []
 
-    elements.append(Paragraph("VulnScan Lite Security Report", styles["Title"]))
-    elements.append(Spacer(1, 20))
-    elements.append(Paragraph(f"Target URL: {scan[1]}", styles["BodyText"]))
-    elements.append(Paragraph(f"Security Score: {scan[2]}", styles["BodyText"]))
-    
+    elements.append(
+        Paragraph(
+            "VulnScan Lite Security Report",
+            styles["Title"]
+        )
+    )
+
+    elements.append(
+        Spacer(1, 20)
+    )
+
+    elements.append(
+        Paragraph(
+            f"Target URL: {scan[1]}",
+            styles["BodyText"]
+        )
+    )
+
+    elements.append(
+        Paragraph(
+            f"Security Score: {scan[2]}",
+            styles["BodyText"]
+        )
+    )
+
     doc.build(elements)
+
     return FileResponse(
         filename,
         media_type="application/pdf",
