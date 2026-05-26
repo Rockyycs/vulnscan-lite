@@ -61,7 +61,10 @@ def scan(data: ScanRequest):
 
         result = run_scan(data.url)
 
-        return result
+        return {
+            "status": "completed",
+            "result": result
+        }
 
     except Exception as e:
 

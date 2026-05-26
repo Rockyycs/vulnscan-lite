@@ -75,56 +75,33 @@ function Dashboard() {
     }
   };
 
-  const pollScanStatus = (taskId) => {
-    const interval = setInterval(async () => {
-      try {
-        const response = await API.get(`https://vulnscan-lite-rig7.onrender.com/scan/status/${taskId}`);
-        const status = response.data.status;
 
-        if (status === "PENDING") {
-          setProgress(25);
-          setScanStage("Queued In Scan Engine");
-        } else if (status === "STARTED") {
-          setProgress(70);
-          setScanStage("Running Vulnerability Analysis");
-        } else if (status === "SUCCESS") {
-          clearInterval(interval);
-          setProgress(100);
-          setScanStage("Threat Intelligence Ready");
-          setResult(response.data.result);
-          setLoading(false);
-          fetchHistory();
-        } else if (status === "FAILURE") {
-          clearInterval(interval);
-          setLoading(false);
-          alert("Scan failed");
-        }
-      } catch (err) {
-        clearInterval(interval);
-        setLoading(false);
-        console.error("Polling instance error caught", err);
-      }
-    }, 2000);
-  };
+const startScan = async () => {
 
-  const startScan = async () => {
-    if (!url) {
-      alert("Enter a URL");
-      return;
-    }
-    try {
-      setLoading(true);
-      setResult(null);
-      setProgress(10);
-      setScanStage("Initializing Scan Engine...");
-      const response = await API.post("https://vulnscan-lite-rig7.onrender.com/scan", { url });
-      const taskId = response.data.task_id;
-      pollScanStatus(taskId);
-    } catch (err) {
-      setLoading(false);
-      alert("Scan failed to initiate context pipeline modules.");
-    }
-  };
+  try {
+
+    setLoading(true)
+
+    const response = await API.post(
+      "https://vulnscan-lite-rig7.onrender.com/scan",
+      { url }
+    )
+
+    const data = response.data.result
+
+    setScanResult(data)
+
+    setLoading(false)
+
+  } catch (error) {
+
+    console.log(error)
+
+    alert("Scan failed")
+
+    setLoading(false)
+  }
+}
 
   const downloadPDF = async () => {
     if (!result) {
