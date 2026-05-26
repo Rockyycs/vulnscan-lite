@@ -1,29 +1,48 @@
-import nmap
+import socket
+
+COMMON_PORTS = {
+    21: "ftp",
+    22: "ssh",
+    23: "telnet",
+    25: "smtp",
+    53: "dns",
+    80: "http",
+    110: "pop3",
+    143: "imap",
+    443: "https",
+    3306: "mysql",
+    8080: "http-alt",
+}
 
 
 def scan_ports(domain):
 
-    scanner = nmap.PortScanner()
+    ports = []
 
     try:
 
-        scanner.scan(domain, arguments="-F")
+        for port, service in COMMON_PORTS.items():
 
-        ports = []
+            sock = socket.socket(
+                socket.AF_INET,
+                socket.SOCK_STREAM
+            )
 
-        for host in scanner.all_hosts():
+            sock.settimeout(1)
 
-            for proto in scanner[host].all_protocols():
+            result = sock.connect_ex(
+                (domain, port)
+            )
 
-                for port in scanner[host][proto]:
+            if result == 0:
 
-                    ports.append({
+                ports.append({
+                    "port": port,
+                    "state": "open",
+                    "service": service
+                })
 
-                        "port": port,
-                        "state": scanner[host][proto][port]["state"],
-                        "service": scanner[host][proto][port]["name"]
-
-                    })
+            sock.close()
 
         return ports
 
